@@ -24,13 +24,6 @@ import {
 } from '@shopify/ui-extensions-react/checkout';
 import { useEffect, useState } from "react";
 
-// Donation options
-const donationOptions = [
-  { label: '£100', value: '100' },
-  { label: '£50', value: '50' },
-  { label: '£20', value: '20' }
-];
-
 export default reactExtension(
   'purchase.checkout.block.render',
   () => <Extension />,
@@ -51,11 +44,25 @@ function Extension() {
   const [cartDonationAmount, setCartDonationAmount] = useState(null);
   const [showForm, setShowForm] = useState(false);
 
-  const { donation_title, donation_content, giftaid_content } = useSettings();
+  const { donation_title, donation_content, giftaid_content, giftaid_link, donation_amount } = useSettings();
 
   const title = donation_title || 'Make A Donation';
   const content = donation_content || '£10 a month could help someone join a Focus on Confident Living Outdoors course to hear about the services, equipment and aids that may be helpful for getting around. ';
   const giftaid = giftaid_content || 'Gift Aid';
+  const giftlink = giftaid_link || 'https://www.gov.uk/donating-to-charity/gift-aid';
+
+  const defaultDonationOptions = [
+    { label: '£50', value: '50' },
+    { label: '£20', value: '20' },
+    { label: '£10', value: '10' }
+  ];
+
+  const donationOptions = donation_amount
+    ? donation_amount.split(',').map(amount => ({
+        label: `£${amount.trim()}`,
+        value: amount.trim()
+      }))
+    : defaultDonationOptions;
 
   // Fetch donation product on component mount
   useEffect(() => {
@@ -286,7 +293,11 @@ function Extension() {
           checked={giftAid}
           onChange={(value) => setGiftAid(value)}
         >
-          {giftaid}
+          yes, I want to{' '}
+          <Link to={giftlink}>
+            Gift Aid
+          </Link>
+          {' '}my donation and any donations I make in the future or have made in the past 4 years to Royal National Institute of Blind People. I am a UK taxpayer and understand that if I pay less Income Tax and/or Capital Gains Tax in the current tax year than the amount of Gift Aid claimed on all my donations it is my responsibility to pay any difference.
         </Checkbox>
       </BlockStack>
       <Button
