@@ -43,6 +43,7 @@ function Extension() {
   const [busy, setBusy] = useState(false);
   const [cartDonationAmount, setCartDonationAmount] = useState(null);
   const [showForm, setShowForm] = useState(false);
+  const [error, setError] = useState('');
 
   const { donation_title, donation_content, giftaid_content, giftaid_link, donation_amount } = useSettings();
 
@@ -135,6 +136,14 @@ function Extension() {
   const handleAddToCart = async (variantId) => {
     setBusy(true);
     const newDonationAmount = parseFloat(customValue || selectedValue);
+    
+    // Add validation
+    if (newDonationAmount <= 0) {
+      setError('Please enter a donation amount greater than £0');
+      return;
+    }
+    
+    setError(''); // Clear any previous errors
 
     const donationLines = lines.filter(line =>
       line.attributes.some(attr => attr.key === '__donation_amount')
@@ -226,6 +235,11 @@ function Extension() {
 
   return (
     <BlockStack spacing="base">
+      {error && (
+        <Banner status="critical">
+          {error}
+        </Banner>
+      )}
       <BlockStack>
         <Heading level="1">{title}</Heading>
         <Banner
@@ -279,9 +293,15 @@ function Extension() {
               type="number"
               value={customValue}
               onChange={(value) => {
+                if (value && parseFloat(value) <= 0) {
+                  setError('Please enter a donation amount greater than £0');
+                  return;
+                }
+                setError('');
                 setSelectedValue(value || '0');
                 setCustomValue(value);
               }}
+              min="0.01"
             />
           </View>
         </Grid>
@@ -293,7 +313,7 @@ function Extension() {
           checked={giftAid}
           onChange={(value) => setGiftAid(value)}
         >
-          yes, I want to{' '}
+          I want to{' '}
           <Link to={giftlink}>
             Gift Aid
           </Link>

@@ -24,3 +24,4 @@ yarn.lock
 pnpm-lock.yaml
 
 .vscode
+.shopify
