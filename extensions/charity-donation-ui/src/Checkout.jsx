@@ -140,6 +140,7 @@ function Extension() {
     // Add validation
     if (newDonationAmount <= 0) {
       setError('Please enter a donation amount greater than £0');
+      setBusy(false); // Reset busy state when validation fails
       return;
     }
     

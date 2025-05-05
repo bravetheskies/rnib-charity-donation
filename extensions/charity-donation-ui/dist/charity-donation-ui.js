@@ -19902,6 +19902,7 @@ ${errorInfo.componentStack}`);
       const newDonationAmount = parseFloat(customValue || selectedValue);
       if (newDonationAmount <= 0) {
         setError("Please enter a donation amount greater than \xA30");
+        setBusy(false);
         return;
       }
       setError("");
