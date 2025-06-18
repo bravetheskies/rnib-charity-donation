@@ -4,14 +4,34 @@ schema {
 }
 
 """
+Scale the Functions resource limits based on the field's length.
+"""
+directive @scaleLimits(rate: Float!) on FIELD_DEFINITION
+
+"""
 Requires that exactly one field must be supplied and that field must not be `null`.
 """
 directive @oneOf on INPUT_OBJECT
 
 """
-Represents a generic custom attribute.
+Represents a generic custom attribute, such as whether an order is a customer's first.
 """
 type Attribute {
+  """
+  The key or name of the attribute. For example, `"customersFirstOrder"`.
+  """
+  key: String!
+
+  """
+  The value of the attribute. For example, `"true"`.
+  """
+  value: String
+}
+
+"""
+Key-value pairs that contains additional information.
+"""
+input AttributeOutput {
   """
   Key or name of the attribute.
   """
@@ -20,7 +40,7 @@ type Attribute {
   """
   Value of the attribute.
   """
-  value: String
+  value: String!
 }
 
 """
@@ -75,7 +95,7 @@ type Cart {
   """
   A list of lines containing information about the items the customer intends to purchase.
   """
-  lines: [CartLine!]!
+  lines: [CartLine!]! @scaleLimits(rate: 0.005)
 }
 
 """
@@ -131,7 +151,8 @@ type CartLineCost {
   amountPerQuantity: MoneyV2!
 
   """
-  The compare at amount of the merchandise line.
+  The compare at amount of the merchandise line. This value varies depending on
+  the buyer's identity, and is null when the value is hidden to buyers.
   """
   compareAtAmountPerQuantity: MoneyV2
 
@@ -162,11 +183,26 @@ input CartLineInput {
 An operation to apply to the Cart.
 """
 input CartOperation @oneOf {
+  """
+  An operation that expands a single cart line item to form a
+  [bundle](https://shopify.dev/docs/apps/build/product-merchandising/bundles)
+  of components.
+  """
   expand: ExpandOperation
+
+  """
+  An operation that merges multiple cart line items into a
+  single line, representing a
+  [bundle](https://shopify.dev/docs/apps/build/product-merchandising/bundles)
+  of components.
+  """
   merge: MergeOperation
 
   """
-  A cart line update operation. Only stores on the Shopify Plus plan can use apps with update operations.
+  An operation that allows you to override the price, title,
+  and image of a cart line item. Only stores on a
+  [Shopify Plus plan](https://help.shopify.com/manual/intro-to-shopify/pricing-plans/plans-features/shopify-plus-plan)
+  can use apps with `update` operations.
   """
   update: UpdateOperation
 }
@@ -1448,7 +1484,7 @@ enum CountryCode {
   TO
 
   """
-  Turkey.
+  Türkiye.
   """
   TR
 
@@ -2524,6 +2560,11 @@ Example values: `"29.99"`, `"29.999"`.
 """
 scalar Decimal
 
+"""
+An operation that expands a single cart line item to form a
+[bundle](https://shopify.dev/docs/apps/build/product-merchandising/bundles)
+of components.
+"""
 input ExpandOperation {
   """
   The cart line id to expand.
@@ -2552,6 +2593,11 @@ input ExpandOperation {
 }
 
 input ExpandedItem {
+  """
+  The CartLine attributes to be added to component line.
+  """
+  attributes: [AttributeOutput!] = []
+
   """
   The merchandise id of the expanded item.
   """
@@ -2599,22 +2645,25 @@ input ExpandedItemPriceAdjustmentValue @oneOf {
 }
 
 """
-Transformations to apply to the Cart. In API versions 2023-10 and beyond, this
-type is deprecated in favor of `FunctionRunResult`.
+The output of the Function run target.
+The object contains the operations to change the pricing and presentation of items
+in a cart. In API versions 2023-10 and beyond, this type is deprecated in favor of `FunctionRunResult`.
 """
 input FunctionResult {
   """
-  Cart operations to run on Cart.
+  The ordered list of operations to apply to the cart.
   """
   operations: [CartOperation!]!
 }
 
 """
-Transformations to apply to the Cart.
+The output of the Function run target.
+The object contains the operations to change the pricing and presentation of items
+in a cart.
 """
 input FunctionRunResult {
   """
-  Cart operations to run on Cart.
+  The ordered list of operations to apply to the cart.
   """
   operations: [CartOperation!]!
 }
@@ -2681,30 +2730,59 @@ input ImageInput {
 
 type Input {
   """
-  The cart.
+  The cart where the Function is running. A cart contains the merchandise that a customer intends to purchase
+  and information about the customer, such as the customer's email address and phone number.
   """
   cart: Cart!
 
   """
-  The CartTransform containing the function.
+  A customization that changes the pricing and
+  presentation of items in a cart. For example,
+  you can modify the appearance of cart items,
+  such as updating titles and images,
+  or [bundling items](https://shopify.dev/docs/apps/build/product-merchandising/bundles).
   """
   cartTransform: CartTransform!
 
   """
-  The localization of the Function execution context.
+  The regional and language settings that determine how the Function
+  handles currency, numbers, dates, and other locale-specific values
+  during discount calculations. These settings are based on the store's configured
+  [localization practices](https://shopify.dev/docs/apps/build/functions/localization-practices-shopify-functions).
   """
   localization: Localization!
 
   """
-  The conversion rate between the shop's currency and the currency of the cart.
+  The exchange rate used to convert discounts between the shop's default
+  currency and the currency that displays to the customer during checkout.
+  For example, if a store operates in USD but a customer is viewing discounts in EUR,
+  then the presentment currency rate handles this conversion for accurate pricing.
   """
   presentmentCurrencyRate: Decimal!
 
   """
-  Information about the shop.
+  Information about the shop where the Function is running, including the shop's timezone
+  setting and associated [metafields](https://shopify.dev/docs/apps/build/custom-data).
   """
   shop: Shop!
 }
+
+"""
+A [JSON](https://www.json.org/json-en.html) object.
+
+Example value:
+`{
+  "product": {
+    "id": "gid://shopify/Product/1346443542550",
+    "title": "White T-shirt",
+    "options": [{
+      "name": "Size",
+      "values": ["M", "L"]
+    }]
+  }
+}`
+"""
+scalar JSON
 
 """
 A language.
@@ -2717,7 +2795,7 @@ type Language {
 }
 
 """
-ISO 639-1 language codes supported by Shopify.
+Language codes supported by Shopify.
 """
 enum LanguageCode {
   """
@@ -2794,6 +2872,11 @@ enum LanguageCode {
   Chechen.
   """
   CE
+
+  """
+  Central Kurdish.
+  """
+  CKB
 
   """
   Czech.
@@ -2874,6 +2957,11 @@ enum LanguageCode {
   Finnish.
   """
   FI
+
+  """
+  Filipino.
+  """
+  FIL
 
   """
   Faroese.
@@ -3226,6 +3314,16 @@ enum LanguageCode {
   RW
 
   """
+  Sanskrit.
+  """
+  SA
+
+  """
+  Sardinian.
+  """
+  SC
+
+  """
   Sindhi.
   """
   SD
@@ -3503,7 +3601,7 @@ type Localization {
   """
   The market of the active localized experience.
   """
-  market: Market!
+  market: Market! @deprecated(reason: "This `market` field will be removed in a future version of the API.")
 }
 
 """
@@ -3576,7 +3674,18 @@ The merchandise to be purchased at checkout.
 """
 union Merchandise = CustomProduct | ProductVariant
 
+"""
+An operation that merges multiple cart line items into a
+single line, representing a
+[bundle](https://shopify.dev/docs/apps/build/product-merchandising/bundles)
+of components.
+"""
 input MergeOperation {
+  """
+  The CartLine attributes to be added to the parent line.
+  """
+  attributes: [AttributeOutput!] = []
+
   """
   The list of cart lines to merge.
   """
@@ -3613,13 +3722,18 @@ For more information about the Shopify resources that you can attach metafields 
 """
 type Metafield {
   """
+  The data stored in the metafield in JSON format.
+  """
+  jsonValue: JSON!
+
+  """
   The type of data that the metafield stores in the `value` field.
   Refer to the list of [supported types](https://shopify.dev/apps/metafields/types).
   """
   type: String!
 
   """
-  The data to store in the metafield. The data is always stored as a string, regardless of the metafield's type.
+  The data stored in the metafield. Always stored as a string, regardless of the metafield's type.
   """
   value: String!
 }
@@ -3846,7 +3960,7 @@ type PurchasingCompany {
 """
 Represents how products and variants can be sold and purchased.
 """
-type SellingPlan {
+type SellingPlan implements HasMetafields {
   """
   The description of the selling plan.
   """
@@ -3856,6 +3970,21 @@ type SellingPlan {
   A globally-unique identifier.
   """
   id: ID!
+
+  """
+  Returns a metafield by namespace and key that belongs to the resource.
+  """
+  metafield(
+    """
+    The key for the metafield.
+    """
+    key: String!
+
+    """
+    The container the metafield belongs to. If omitted, the app-reserved namespace will be used.
+    """
+    namespace: String
+  ): Metafield
 
   """
   The name of the selling plan. For example, '6 weeks of prepaid granola, delivered weekly'.
@@ -3947,13 +4076,16 @@ scalar TimeWithoutTimezone
 Represents an [RFC 3986](https://datatracker.ietf.org/doc/html/rfc3986) and
 [RFC 3987](https://datatracker.ietf.org/doc/html/rfc3987)-compliant URI string.
 
-For example, `"https://johns-apparel.myshopify.com"` is a valid URL. It includes a scheme (`https`) and a host
-(`johns-apparel.myshopify.com`).
+For example, `"https://example.myshopify.com"` is a valid URL. It includes a scheme (`https`) and a host
+(`example.myshopify.com`).
 """
 scalar URL
 
 """
-A cart line update operation. Only stores on the Shopify Plus plan can use apps with update operations.
+An operation that allows you to override the price, title,
+and image of a cart line item. Only stores on a
+[Shopify Plus plan](https://help.shopify.com/manual/intro-to-shopify/pricing-plans/plans-features/shopify-plus-plan)
+can use apps with `update` operations.
 """
 input UpdateOperation {
   """
@@ -3972,7 +4104,7 @@ input UpdateOperation {
   price: UpdateOperationPriceAdjustment
 
   """
-  The title override for the cart line item. If not provided, the variant title is used.
+  The title override for the cart line item.
   """
   title: String
 }
