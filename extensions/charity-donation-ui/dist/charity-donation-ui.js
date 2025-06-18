@@ -19625,7 +19625,7 @@
   // node_modules/@shopify/ui-extensions-react/build/esm/surfaces/checkout/render.mjs
   var import_jsx_runtime3 = __toESM(require_jsx_runtime(), 1);
   function reactExtension(target, render3) {
-    return extension(target, (root, api) => __async(this, null, function* () {
+    return extension(target, (root, api) => __async(null, null, function* () {
       const element = yield render3(api);
       yield new Promise((resolve, reject) => {
         try {
@@ -19849,7 +19849,7 @@ ${errorInfo.componentStack}`);
     (0, import_react24.useEffect)(() => {
       updateSelectedValueFromCart();
     }, [lines]);
-    const fetchDonationProduct = () => __async(this, null, function* () {
+    const fetchDonationProduct = () => __async(null, null, function* () {
       setLoading(true);
       try {
         const { data } = yield query(
@@ -19897,11 +19897,12 @@ ${errorInfo.componentStack}`);
       }
       setShowForm(false);
     };
-    const handleAddToCart = (variantId) => __async(this, null, function* () {
+    const handleAddToCart = (variantId) => __async(null, null, function* () {
       setBusy(true);
       const newDonationAmount = parseFloat(customValue || selectedValue);
       if (newDonationAmount <= 0) {
         setError("Please enter a donation amount greater than \xA30");
+        setBusy(false);
         return;
       }
       setError("");
@@ -19937,7 +19938,7 @@ ${errorInfo.componentStack}`);
       }
       setBusy(false);
     });
-    const handleRemoveDonation = () => __async(this, null, function* () {
+    const handleRemoveDonation = () => __async(null, null, function* () {
       setBusy(true);
       const donationLines = lines.filter(
         (line) => line.attributes.some((attr) => attr.key === "__donation_amount")
@@ -19973,7 +19974,6 @@ ${errorInfo.componentStack}`);
       ] });
     }
     return /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)(BlockStack2, { spacing: "base", children: [
-      error && /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(Banner2, { status: "critical", children: error }),
       /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)(BlockStack2, { children: [
         /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(Heading2, { level: "1", children: title }),
         /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
@@ -19984,6 +19984,7 @@ ${errorInfo.componentStack}`);
           }
         )
       ] }),
+      error && /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(Banner2, { status: "critical", children: error }),
       /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(View2, { border: "none", padding: "none", children: "Choose an amount or enter your own:" }),
       /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(BlockStack2, { background: "none", cornerRadius: "none", children: /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)(
         Grid2,
