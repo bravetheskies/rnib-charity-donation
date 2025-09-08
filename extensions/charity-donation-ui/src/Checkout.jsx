@@ -15,21 +15,17 @@ import {
   ToggleButton,
   Checkbox,
   InlineLayout,
-  InlineStack,
   Heading,
-  TextField
+  TextField,
+  Style,
+  Grid,
+  Text,
+  useSettings,
 } from '@shopify/ui-extensions-react/checkout';
 import { useEffect, useState } from "react";
 
-// Donation options
-const donationOptions = [
-  { label: '£100', value: '100' },
-  { label: '£50', value: '50' },
-  { label: '£20', value: '20' }
-];
-
 export default reactExtension(
-  'purchase.checkout.shipping-option-list.render-after',
+  'purchase.checkout.block.render',
   () => <Extension />,
 );
 
@@ -47,6 +43,27 @@ function Extension() {
   const [busy, setBusy] = useState(false);
   const [cartDonationAmount, setCartDonationAmount] = useState(null);
   const [showForm, setShowForm] = useState(false);
+  const [error, setError] = useState('');
+
+  const { donation_title, donation_content, giftaid_content, giftaid_link, donation_amount } = useSettings();
+
+  const title = donation_title || 'Make A Donation';
+  const content = donation_content || '£10 a month could help someone join a Focus on Confident Living Outdoors course to hear about the services, equipment and aids that may be helpful for getting around. ';
+  const giftaid = giftaid_content || 'Gift Aid';
+  const giftlink = giftaid_link || 'https://www.gov.uk/donating-to-charity/gift-aid';
+
+  const defaultDonationOptions = [
+    { label: '£50', value: '50' },
+    { label: '£20', value: '20' },
+    { label: '£10', value: '10' }
+  ];
+
+  const donationOptions = donation_amount
+    ? donation_amount.split(',').map(amount => ({
+        label: `£${amount.trim()}`,
+        value: amount.trim()
+      }))
+    : defaultDonationOptions;
 
   // Fetch donation product on component mount
   useEffect(() => {
@@ -119,6 +136,15 @@ function Extension() {
   const handleAddToCart = async (variantId) => {
     setBusy(true);
     const newDonationAmount = parseFloat(customValue || selectedValue);
+    
+    // Add validation
+    if (newDonationAmount <= 0) {
+      setError('Please enter a donation amount greater than £0');
+      setBusy(false); // Reset busy state when validation fails
+      return;
+    }
+    
+    setError(''); // Clear any previous errors
 
     const donationLines = lines.filter(line =>
       line.attributes.some(attr => attr.key === '__donation_amount')
@@ -210,19 +236,33 @@ function Extension() {
 
   return (
     <BlockStack spacing="base">
+      {error && (
+        <Banner status="critical">
+          {error}
+        </Banner>
+      )}
       <BlockStack>
-        <Heading level="1">Donation</Heading>
+        <Heading level="1">{title}</Heading>
         <Banner
           status="info"
-          title="Help us to continue our work by making a donation."
+          title={content}
         />
       </BlockStack>
-      <View border="none" padding="base">
+      <View border="none" padding="none">
         Choose an amount or enter your own:
       </View>
       <BlockStack background="none" cornerRadius="none">
-        <InlineLayout columns={['45%', '10%', '45%']}>
-          <View border="none" padding="base" minInlineSize="fill" inlineSize="fill">
+        <Grid 
+          columns={Style.default(['fill']).when({viewportInlineSize: {min: 'small'}}, [
+            '45%',
+            '10%',
+            '45%',
+          ])}
+          rows={Style.default(['auto', 30, 'auto']).when({viewportInlineSize: {min: 'small'}}, [
+            'auto',
+          ])}
+        >
+          <View border="none" padding="none" minInlineSize="fill" inlineSize="fill">
             <ToggleButtonGroup
               label="Donation Amount"
               value={selectedValue}
@@ -231,7 +271,7 @@ function Extension() {
                 setCustomValue('');
               }}
             >
-              <InlineStack spacing="base">
+              <InlineLayout spacing="base" minInlineSize="fill" inlineSize="fill">
                 {donationOptions.map((option, index) => (
                   <ToggleButton
                     id={option.value.toString()}
@@ -243,44 +283,43 @@ function Extension() {
                     </View>
                   </ToggleButton>
                 ))}
-              </InlineStack>
+              </InlineLayout>
             </ToggleButtonGroup>
           </View>
-          <View border="none" padding="base" blockAlignment="center">
-            or
+          <View border="none" padding="none" blockAlignment="center" inlineAlignment="center">
+            <Text size="base">or</Text>
           </View>
-          <View border="none" padding="base">
+          <View border="none" padding="none">
             <TextField
               type="number"
               value={customValue}
               onChange={(value) => {
+                if (value && parseFloat(value) <= 0) {
+                  setError('Please enter a donation amount greater than £0');
+                  return;
+                }
+                setError('');
                 setSelectedValue(value || '0');
                 setCustomValue(value);
               }}
+              min="0.01"
             />
           </View>
-        </InlineLayout>
+        </Grid>
       </BlockStack>
       <BlockStack>
-        <Pressable
-          overlay={
-            <Tooltip>
-              At no extra cost to you, every £1 donated with Gift Aid, Cancer Research UK gets an extra 25p from the government just by you choosing to Gift Aid it.
-            </Tooltip>
-          }
+        <Checkbox
+          id="giftAid"
+          name="giftAid"
+          checked={giftAid}
+          onChange={(value) => setGiftAid(value)}
         >
-          <Checkbox
-            id="giftAid"
-            name="giftAid"
-            checked={giftAid}
-            onChange={(value) => setGiftAid(value)}
-          >
-            Donate as Gift Aid?
-            (<Link external={true} to="https://www.cancerresearchuk.org/get-involved/donate/gift-aid/sign-up-to-gift-aid">
-              Register for Gift Aid
-            </Link>)
-          </Checkbox>
-        </Pressable>
+          I want to{' '}
+          <Link to={giftlink}>
+            Gift Aid
+          </Link>
+          {' '}my donation and any donations I make in the future or have made in the past 4 years to Royal National Institute of Blind People. I am a UK taxpayer and understand that if I pay less Income Tax and/or Capital Gains Tax in the current tax year than the amount of Gift Aid claimed on all my donations it is my responsibility to pay any difference.
+        </Checkbox>
       </BlockStack>
       <Button
         loading={busy}
