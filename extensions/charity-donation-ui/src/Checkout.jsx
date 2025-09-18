@@ -236,11 +236,6 @@ function Extension() {
 
   return (
     <BlockStack spacing="base">
-      {error && (
-        <Banner status="critical">
-          {error}
-        </Banner>
-      )}
       <BlockStack>
         <Heading level="1">{title}</Heading>
         <Banner
@@ -248,6 +243,11 @@ function Extension() {
           title={content}
         />
       </BlockStack>
+      {error && (
+        <Banner status="critical">
+          {error}
+        </Banner>
+      )}
       <View border="none" padding="none">
         Choose an amount or enter your own:
       </View>
