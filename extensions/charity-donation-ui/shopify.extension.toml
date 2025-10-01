@@ -6,6 +6,7 @@
 api_version = "2025-07"
 
 [[extensions]]
+uid = "328b1e2d-6966-5405-b991-332332b6399897d74174"
 type = "ui_extension"
 name = "Charity Donation UIX"
 handle = "charity-donation-ui"

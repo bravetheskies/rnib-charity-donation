@@ -4,6 +4,7 @@ api_version = "2025-07"
 handle = "donation-checkout-validation"
 name = "t:name"
 description = "t:description"
+uid = "b2ad9408-56c0-0bf3-91bc-8929c8b23bb317c74032"
 type = "function"
 
   [[extensions.targeting]]

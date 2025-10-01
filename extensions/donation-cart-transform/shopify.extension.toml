@@ -4,6 +4,7 @@ api_version = "2025-07"
 handle = "donation-cart-transform"
 name = "t:name"
 description = "t:description"
+uid = "64bcb866-f231-ddca-dccd-155ecbd9f43301838f31"
 type = "function"
 
   [[extensions.targeting]]
